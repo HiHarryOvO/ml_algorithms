@@ -1,11 +1,12 @@
 """
-This is like the easiest linear regression with Batch Gradient Descent method.
+Build linear regression with Stochastic Gradient Descent method.
 """
 import numpy as np
+import random
 import matplotlib.pyplot as plt
 
 
-def sum_partial(X, y, _theta, attr):
+def single_partial(X, y, _theta, attr):
     partial = 0
     for i in range(len(X)):
         partial += (np.dot(_theta, X[i]) - y[i]) * X[i][attr]
@@ -22,16 +23,17 @@ def loss_function(X, y, _theta):
 X = [[1, -0.9, -0.8], [1, -0.78, -0.56], [1, 0, 0.2]]
 y = [-0.7, -0.23, 0.5]
 
-alpha = 0.03  # typically we set it to be O(1 / sqrt(t))
+alpha = 0.01  # typically we set it to be O(1 / sqrt(t))
 m = 3  # number of instances
 n = 3  # number of attributes
 theta = [0 for i in range(3)]
 
 loss_all = []
 for i in range(1000):
+    ind = random.randint(0, m - 1)
     theta_1 = theta[:]
-    for j in range(n):
-        theta[j] -= alpha * (1 / m) * sum_partial(X, y, theta_1, j)
+    for j in range(m):
+        theta[j] -= alpha * (np.dot(theta_1, X[ind]) - y[ind]) * X[ind][j]
     loss_all.append(loss_function(X, y, theta))
 print(theta)
 

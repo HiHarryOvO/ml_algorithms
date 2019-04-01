@@ -24,25 +24,98 @@ def loss_function(X, y, _theta):
     return loss / (2 * len(X))
 
 
-def sgd(X, y, theta, alpha=1, iter_times=100):
+def sgd(X, y, theta, alpha=1., iter_times=100):
     for i in range(iter_times):
         ind = random.randint(0, len(X) - 1)
         theta_1 = theta[:]
         for j in range(len(theta)):
             theta[j] -= alpha * (np.dot(theta_1, X[ind]) - y[ind]) * X[ind][j]
         # loss_all.append(loss_function(X_train, y_train, theta))
+    return theta
 
 
-def duchi_sgd(X, y, theta, epsilon, alpha=1, iter_times=100):
+def laplace_sgd(X, y, theta, epsilon, alpha=1., iter_times=100):
+    unused_users = list(range(0, len(X) - 1))
+    for i in range(iter_times):
+        ind = random.choice(unused_users)
+        unused_users.remove(ind)
+        theta_1 = theta[:]
+        private_gradients = []
+        for j in range(len(theta)):
+            gradient = alpha * (np.dot(theta_1, X[ind]) - y[ind]) * X[ind][j]
+            private_gradient = gradient + np.random.laplace(scale=(2 * len(theta) / epsilon))
+            private_gradients.append(private_gradient)
+        theta = np.subtract(theta, private_gradients)
+    return theta
+
+
+def duchi_sgd(X, y, theta, epsilon, alpha=1., iter_times=100):
     for i in range(iter_times):
         ind = random.randint(0, len(X) - 1)
         theta_1 = theta[:]
         gradients = []
         for j in range(len(theta)):
             gradients.append(alpha * (np.dot(theta_1, X[ind]) - y[ind]) * X[ind][j])
+        # print(gradients)
         private_gradients = new_algorithms.duchi_method(gradients, epsilon)
+        # print(private_gradients)
         theta = np.subtract(theta, private_gradients)
         # loss_all.append(loss_function(X_train, y_train, theta))
+    return theta
+
+
+def mini_gd_pm(X, y, theta, epsilon, alpha=1., iter_times=100):
+    d = len(theta)
+    G = int(d * math.log(d) / (epsilon ** 2))
+    unused_users = list(range(0, len(X) - 1))
+    for i in range(iter_times):
+        if len(unused_users) >= G:
+            instances = random.sample(unused_users, G)
+            unused_users = list(set(unused_users).difference(set(instances)))
+            theta_1 = theta[:]
+            sum_private_gradients = [0 for k in range(len(theta))]
+            for ind in instances:
+                gradients = []
+                for j in range(len(theta)):
+                    gradients.append(alpha * (np.dot(theta_1, X[ind]) - y[ind]) * X[ind][j])
+                print(gradients)
+                private_gradients = new_algorithms.proposed_method(gradients, epsilon, method='pm')
+                sum_private_gradients = np.add(sum_private_gradients, private_gradients)
+            # print(gradients)
+            # private_gradients = new_algorithms.duchi_method(gradients, epsilon)
+            # print(private_gradients)
+            theta = np.subtract(theta, np.divide(sum_private_gradients, G))
+            # loss_all.append(loss_function(X_train, y_train, theta))
+        else:
+            break
+    return theta
+
+
+def mini_gd_hm(X, y, theta, epsilon, alpha=1., iter_times=100):
+    d = len(theta)
+    G = int(d * math.log(d) / (epsilon ** 2))
+    unused_users = list(range(0, len(X) - 1))
+    for i in range(iter_times):
+        if len(unused_users) >= G:
+            instances = random.sample(unused_users, G)
+            unused_users = list(set(unused_users).difference(set(instances)))
+            theta_1 = theta[:]
+            sum_private_gradients = [0 for k in range(len(theta))]
+            for ind in instances:
+                gradients = []
+                for j in range(len(theta)):
+                    gradients.append(alpha * (np.dot(theta_1, X[ind]) - y[ind]) * X[ind][j])
+                # print(gradients)
+                private_gradients = new_algorithms.proposed_method(gradients, epsilon, method='hm')
+                sum_private_gradients = np.add(sum_private_gradients, private_gradients)
+            # print(gradients)
+            # private_gradients = new_algorithms.duchi_method(gradients, epsilon)
+            # print(private_gradients)
+            theta = np.subtract(theta, np.divide(sum_private_gradients, G))
+            # loss_all.append(loss_function(X_train, y_train, theta))
+        else:
+            break
+    return theta
 
 
 if __name__ == "__main__":

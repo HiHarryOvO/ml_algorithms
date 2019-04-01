@@ -58,7 +58,7 @@ def duchi_method(tp, epsilon):  # tp is a d-dimensional tuple
     if d % 2 != 0:
         C_d = 2 ** (d - 1) / comb(d - 1, int((d - 1) / 2))
     else:
-        C_d = (2 ** (d - 1) + comb(d, int(d / 2))) / comb(d - 1, int(d / 2))
+        C_d = (2 ** (d - 1) + comb(d, int(d / 2)) / 2) / comb(d - 1, int(d / 2))
 
     B = C_d * (exp(epsilon) + 1) / (exp(epsilon) - 1)
     neg_B = (-1) * B
@@ -67,7 +67,7 @@ def duchi_method(tp, epsilon):  # tp is a d-dimensional tuple
     t_pos = []
     t_neg = []
     for t_star in itertools.product([neg_B, B], repeat=d):
-        if np.dot(np.array(t_star), np.array(v)) > 0:
+        if np.dot(np.array(t_star), v) > 0:
             t_pos.append(t_star)
         else:
             t_neg.append(t_star)
@@ -94,7 +94,7 @@ def proposed_method(tp, epsilon, method):  # tp is a d-dimensional tuple
 
 
 if __name__ == '__main__':
-    random.seed(10)
+    # random.seed(10)
     num = 5000
     t1 = [random.random() for i in range(num)]
     mean_t1 = np.mean(t1)
